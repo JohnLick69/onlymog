@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OnlyMog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#000; --surface:#0d0d0d; --border:#222; --text:#fff; --muted:#777; --radius:12px; }
+    body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; }
+    nav { display:flex; align-items:center; justify-content:space-between; padding:16px 40px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; background:rgba(0,0,0,.95); backdrop-filter:blur(12px); }
+    .logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:3px; }
+    .nav-tabs { display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:4px; }
+    .nav-tab { padding:8px 22px; border-radius:999px; border:0; background:transparent; color:var(--muted); font-size:.85rem; font-weight:500; cursor:pointer; transition:.2s; }
+    .nav-tab.active { background:#fff; color:#000; }
+    .view { display:none; }
+    .view.active { display:block; }
+    .hero { text-align:center; padding:52px 24px 34px; }
+    .hero-title { font-family:'Bebas Neue',sans-serif; font-size:5rem; letter-spacing:6px; line-height:.9; }
+    .hero-eyebrow { font-size:.72rem; letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+    .hero-sub { color:var(--muted); font-size:.95rem; font-weight:300; margin-top:10px; }
+    .arena { max-width:900px; margin:0 auto; padding:20px 24px 80px; }
+    .matchup-label { text-align:center; font-size:.7rem; letter-spacing:6px; text-transform:uppercase; color:var(--muted); margin-bottom:28px; }
+    .vs-grid { display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; }
+    .competitor-card { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; background:var(--surface); transition:.18s; position:relative; }
+    .competitor-card:hover { transform:translateY(-4px); border-color:#fff; box-shadow:0 12px 40px rgba(255,255,255,.07); }
+    .competitor-card.voted { border-color:#fff; box-shadow:0 0 0 2px #fff,0 12px 40px rgba(255,255,255,.10); }
+    .competitor-card.voted-against { opacity:.38; filter:grayscale(.7); }
+    .card-img-wrap { width:100%; aspect-ratio:3/4; overflow:hidden; background:#111; display:flex; align-items:center; justify-content:center; position:relative; color:#333; }
+    .card-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+    .vote-btn-wrap { position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:center; padding:32px 0 18px; opacity:0; transition:.2s; pointer-events:none; z-index:10; background:linear-gradient(transparent,rgba(0,0,0,.7)); }
+    .competitor-card:hover .vote-btn-wrap { opacity:1; }
+    .competitor-card.voted .vote-btn-wrap, .competitor-card.voted-against .vote-btn-wrap { display:none; }
+    .vote-btn { background:#fff; color:#000; border:0; border-radius:999px; padding:10px 26px; font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:3px; cursor:pointer; pointer-events:auto; }
+    .vote-btn:hover { transform:scale(1.06); background:#e0e0e0; }
+    .mogged-overlay { position:absolute; top:40%; left:50%; transform:translate(-50%,-50%) rotate(-12deg); display:none; z-index:30; pointer-events:none; font-family:'Bebas Neue',sans-serif; font-size:3rem; letter-spacing:4px; border:3px solid #fff; padding:6px 14px; background:rgba(0,0,0,.75); }
+    .competitor-card.voted-against .mogged-overlay { display:block; }
+    .vote-crown { position:absolute; top:10px; left:10px; background:#fff; color:#000; font-size:.62rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:4px 8px; border-radius:4px; display:none; z-index:5; }
+    .competitor-card.voted .vote-crown { display:block; }
+    .vote-bar-wrap { height:3px; background:#222; width:100%; }
+    .vote-bar { height:100%; background:#fff; transition:width .5s cubic-bezier(.4,0,.2,1); }
+    .win-progress-wrap { padding:10px 16px 0; }
+    .win-progress-track { height:4px; background:#1a1a1a; border-radius:999px; overflow:hidden; }
+    .win-progress-fill { height:100%; background:#fff; border-radius:999px; transition:width .4s cubic-bezier(.4,0,.2,1); }
+    .win-progress-label { font-family:'Bebas Neue',sans-serif; font-size:.75rem; color:var(--muted); letter-spacing:2px; text-align:right; margin-top:4px; }
+    .card-footer { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+    .card-name { font-size:.92rem; font-weight:500; }
+    .card-votes { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; }
+    .vs-divider { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; opacity:.7; }
+    .arena-actions { display:flex; gap:12px; justify-content:center; align-items:center; margin-top:32px; flex-wrap:wrap; }
+    .btn { padding:11px 28px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:.82rem; font-weight:500; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:.2s; }
+    .btn:hover { border-color:#fff; color:#fff; }
+    .btn:disabled { opacity:.3; cursor:not-allowed; }
+    .btn-primary { background:#fff; color:#000; border-color:#fff; font-weight:700; }
+    .btn-primary:hover { background:#e0e0e0; border-color:#e0e0e0; color:#000; }
+    .skip-count { font-family:'Bebas Neue',sans-serif; font-size:1rem; color:var(--muted); letter-spacing:1px; }
+    .skip-count.low { color:#ff5555; }
+    .submit-wrap, .board-wrap { max-width:620px; margin:48px auto 80px; padding:0 24px; }
+    .submit-wrap { max-width:480px; }
+    .submit-wrap h2, .board-title { font-family:'Bebas Neue',sans-serif; font-size:2.8rem; letter-spacing:3px; margin-bottom:8px; }
+    .submit-wrap p, .board-sub { color:var(--muted); font-size:.9rem; margin-bottom:32px; font-weight:300; }
+    .upload-zone { border:1.5px dashed var(--border); border-radius:var(--radius); aspect-ratio:3/4; max-height:380px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; cursor:pointer; background:var(--surface); position:relative; overflow:hidden; }
+    .upload-zone:hover, .upload-zone.has-img { border-color:#fff; }
+    .upload-zone img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+    .upload-label { font-size:.85rem; color:var(--muted); }
+    .form-field { margin-top:20px; }
+    .form-field label { display:block; font-size:.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+    .form-field input { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; color:#fff; font-size:.95rem; outline:0; }
+    .form-field input:focus { border-color:#fff; }
+    .submit-btn-wrap { margin-top:28px; }
+    .submit-btn-wrap .btn-primary { width:100%; border-radius:10px; padding:16px; }
+    .board-row { display:grid; grid-template-columns:36px 52px 1fr auto; align-items:center; gap:16px; padding:14px 16px; border-radius:var(--radius); background:var(--surface); border:1px solid var(--border); margin-bottom:8px; }
+    .board-row:first-child { border-color:#fff; }
+    .board-rank { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:var(--muted); }
+    .board-avatar { width:48px; height:48px; border-radius:8px; object-fit:cover; background:#1a1a1a; }
+    .board-name { font-size:.95rem; font-weight:500; }
+    .board-score { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; }
+    .toast { position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(20px); background:#fff; color:#000; padding:14px 28px; border-radius:999px; font-size:.85rem; font-weight:700; opacity:0; pointer-events:none; transition:.3s; z-index:999; white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    @media (max-width:600px) { nav { padding:14px 20px; } .logo { font-size:1.55rem; } .nav-tab { padding:7px 13px; } .hero-title { font-size:3.8rem; } .arena { padding:12px 12px 60px; } .vs-grid { gap:8px; } .vs-divider { font-size:1.6rem; } .card-footer { padding:10px; } }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">ONLYMOG</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="vote">Vote</button>
+      <button class="nav-tab" data-view="submit">Submit</button>
+      <button class="nav-tab" data-view="board">Board</button>
+    </div>
+  </nav>
+
+  <main id="view-vote" class="view active">
+    <section class="hero">
+      <div class="hero-eyebrow">Face off</div>
+      <h1 class="hero-title">MOGOFF</h1>
+      <p class="hero-sub">Pick who wins the head-to-head.</p>
+    </section>
+    <section class="arena">
+      <div class="matchup-label">Current matchup</div>
+      <div class="vs-grid">
+        <article class="competitor-card" id="card-a">
+          <div class="vote-crown">Mogging ✓</div><div class="mogged-overlay">MOGGED</div>
+          <div class="card-img-wrap" id="img-a"></div>
+          <div class="vote-btn-wrap"><button class="vote-btn" data-vote="a">MOG THIS ☝</button></div>
+          <div class="vote-bar-wrap"><div class="vote-bar" id="bar-a"></div></div>
+          <div class="win-progress-wrap"><div class="win-progress-track"><div class="win-progress-fill" id="prog-a"></div></div><div class="win-progress-label"><span id="prog-label-a">0</span> / 10</div></div>
+          <div class="card-footer"><span class="card-name" id="name-a">—</span><span class="card-votes" id="votes-a">0</span></div>
+        </article>
+        <div class="vs-divider">VS</div>
+        <article class="competitor-card" id="card-b">
+          <div class="vote-crown">Mogging ✓</div><div class="mogged-overlay">MOGGED</div>
+          <div class="card-img-wrap" id="img-b"></div>
+          <div class="vote-btn-wrap"><button class="vote-btn" data-vote="b">MOG THIS ☝</button></div>
+          <div class="vote-bar-wrap"><div class="vote-bar" id="bar-b"></div></div>
+          <div class="win-progress-wrap"><div class="win-progress-track"><div class="win-progress-fill" id="prog-b"></div></div><div class="win-progress-label"><span id="prog-label-b">0</span> / 10</div></div>
+          <div class="card-footer"><span class="card-name" id="name-b">—</span><span class="card-votes" id="votes-b">0</span></div>
+        </article>
+      </div>
+      <div class="arena-actions">
+        <button class="btn" id="skip-btn">Skip</button><span class="skip-count" id="skip-count">3 skips left</span><button class="btn btn-primary" id="next-btn" disabled>Next battle</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="view-submit" class="view">
+    <section class="submit-wrap">
+      <h2>Submit</h2><p>Upload your best pic and enter the arena.</p>
+      <label class="upload-zone" id="upload-zone"><span class="upload-label">Click to upload image</span><input id="photo-input" type="file" accept="image/*"></label>
+      <div class="form-field"><label for="name-input">Name</label><input id="name-input" placeholder="Your name"></div>
+      <div class="submit-btn-wrap"><button class="btn btn-primary" id="submit-btn">Submit competitor</button></div>
+    </section>
+  </main>
+
+  <main id="view-board" class="view">
+    <section class="board-wrap"><h2 class="board-title">Leaderboard</h2><p class="board-sub">Top moggers ranked by wins.</p><div id="board-list"></div></section>
+  </main>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'onlymog_competitors_v1';
+    const defaultCompetitors = [
+      { id: crypto.randomUUID(), name: 'Contestant A', image: '', votes: 0, wins: 0 },
+      { id: crypto.randomUUID(), name: 'Contestant B', image: '', votes: 0, wins: 0 },
+      { id: crypto.randomUUID(), name: 'Contestant C', image: '', votes: 0, wins: 0 },
+      { id: crypto.randomUUID(), name: 'Contestant D', image: '', votes: 0, wins: 0 }
+    ];
+    let competitors = loadCompetitors();
+    let pair = [0, 1];
+    let hasVoted = false;
+    let skipsLeft = 3;
+    let uploadedImage = '';
+
+    function loadCompetitors() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultCompetitors; }
+      catch { return defaultCompetitors; }
+    }
+    function saveCompetitors() { localStorage.setItem(STORAGE_KEY, JSON.stringify(competitors)); }
+    function $(id) { return document.getElementById(id); }
+    function showToast(message) { const toast = $('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); }
+
+    function switchView(viewName, tab) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      $('view-' + viewName).classList.add('active');
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      if (viewName === 'board') renderBoard();
+    }
+
+    function renderImage(slot, competitor) {
+      const wrap = $('img-' + slot);
+      if (competitor.image) wrap.innerHTML = `<img src="${competitor.image}" alt="${competitor.name}">`;
+      else wrap.innerHTML = '<div>No image yet</div>';
+    }
+
+    function renderMatch() {
+      hasVoted = false;
+      $('next-btn').disabled = true;
+      ['a', 'b'].forEach(slot => {
+        $('card-' + slot).classList.remove('voted', 'voted-against');
+        $('bar-' + slot).style.width = '50%';
+      });
+      const a = competitors[pair[0]], b = competitors[pair[1]];
+      renderImage('a', a); renderImage('b', b);
+      $('name-a').textContent = a.name; $('name-b').textContent = b.name;
+      $('votes-a').textContent = a.votes; $('votes-b').textContent = b.votes;
+      $('prog-a').style.width = Math.min(a.wins * 10, 100) + '%';
+      $('prog-b').style.width = Math.min(b.wins * 10, 100) + '%';
+      $('prog-label-a').textContent = a.wins; $('prog-label-b').textContent = b.wins;
+      $('skip-count').textContent = `${skipsLeft} ${skipsLeft === 1 ? 'skip' : 'skips'} left`;
+      $('skip-count').classList.toggle('low', skipsLeft <= 1);
+      $('skip-btn').disabled = skipsLeft <= 0;
+    }
+
+    function vote(slot) {
+      if (hasVoted) return;
+      hasVoted = true;
+      const winnerIndex = slot === 'a' ? pair[0] : pair[1];
+      const loserSlot = slot === 'a' ? 'b' : 'a';
+      competitors[winnerIndex].votes += 1;
+      competitors[winnerIndex].wins = Math.min(10, competitors[winnerIndex].wins + 1);
+      saveCompetitors();
+      $('card-' + slot).classList.add('voted');
+      $('card-' + loserSlot).classList.add('voted-against');
+      $('votes-' + slot).textContent = competitors[winnerIndex].votes;
+      $('prog-' + slot).style.width = (competitors[winnerIndex].wins * 10) + '%';
+      $('prog-label-' + slot).textContent = competitors[winnerIndex].wins;
+      const total = competitors[pair[0]].votes + competitors[pair[1]].votes || 1;
+      $('bar-a').style.width = ((competitors[pair[0]].votes / total) * 100) + '%';
+      $('bar-b').style.width = ((competitors[pair[1]].votes / total) * 100) + '%';
+      $('next-btn').disabled = false;
+    }
+
+    function randomPair() {
+      if (competitors.length < 2) return [0, 0];
+      let first = Math.floor(Math.random() * competitors.length);
+      let second;
+      do { second = Math.floor(Math.random() * competitors.length); } while (second === first);
+      return [first, second];
+    }
+    function nextBattle() { pair = randomPair(); renderMatch(); }
+    function skipBattle() { if (skipsLeft <= 0) return; skipsLeft -= 1; nextBattle(); }
+
+    function renderBoard() {
+      const list = $('board-list');
+      const ranked = [...competitors].sort((a, b) => b.wins - a.wins || b.votes - a.votes);
+      list.innerHTML = ranked.map((c, i) => `
+        <div class="board-row">
+          <div class="board-rank">${i + 1}</div>
+          ${c.image ? `<img class="board-avatar" src="${c.image}" alt="${c.name}">` : '<div class="board-avatar"></div>'}
+          <div class="board-name">${c.name}</div>
+          <div class="board-score">${c.wins}</div>
+        </div>`).join('');
+    }
+
+    $('photo-input').addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadedImage = reader.result;
+        $('upload-zone').classList.add('has-img');
+        $('upload-zone').querySelector('.upload-label')?.remove();
+        let img = $('upload-preview');
+        if (!img) { img = document.createElement('img'); img.id = 'upload-preview'; $('upload-zone').appendChild(img); }
+        img.src = uploadedImage;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    $('submit-btn').addEventListener('click', () => {
+      const name = $('name-input').value.trim();
+      if (!name || !uploadedImage) { showToast('Add a name and image first'); return; }
+      competitors.push({ id: crypto.randomUUID(), name, image: uploadedImage, votes: 0, wins: 0 });
+      saveCompetitors();
+      $('name-input').value = ''; uploadedImage = ''; $('photo-input').value = ''; $('upload-zone').classList.remove('has-img');
+      $('upload-zone').innerHTML = '<span class="upload-label">Click to upload image</span><input id="photo-input" type="file" accept="image/*">';
+      $('photo-input').addEventListener('change', event => location.reload());
+      showToast('Submitted');
+      pair = randomPair(); renderMatch();
+    });
+
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.addEventListener('click', () => switchView(tab.dataset.view, tab)));
+    document.querySelectorAll('[data-vote]').forEach(btn => btn.addEventListener('click', () => vote(btn.dataset.vote)));
+    $('next-btn').addEventListener('click', nextBattle);
+    $('skip-btn').addEventListener('click', skipBattle);
+    pair = randomPair(); renderMatch();
+  </script>
+</body>
+</html>
